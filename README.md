@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -113,108 +114,29 @@ hr{margin:12px 0; border:0; height:1px; background:#444}
 
 
 .capture-bar{
-  position:fixed;
-  left:max(12px, env(safe-area-inset-left));
-  right:max(12px, env(safe-area-inset-right));
-  bottom:max(12px, env(safe-area-inset-bottom));
-  z-index:45;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:18px;
-  pointer-events:none;
+ position:fixed;
+ left:max(12px, env(safe-area-inset-left));
+ top:max(12px, env(safe-area-inset-top));
+ z-index:40;
+ display:flex;
+ gap:8px;
 }
 .capture-bar button{
-  pointer-events:auto;
-  min-height:72px;
-  min-width:72px;
-  width:72px;
-  height:72px;
-  padding:0;
-  backdrop-filter:blur(10px);
-  background:rgba(0,0,0,.45);
-  border:2px solid rgba(255,255,255,.85);
-  border-radius:999px;
-  box-shadow:0 8px 30px rgba(0,0,0,.35);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:12px;
-  font-weight:700;
-}
-.capture-bar #takeSnapshot{
-  background:rgba(255,255,255,.12);
-}
-.capture-bar #recordToggle{
-  width:88px;
-  height:88px;
-  border-width:3px;
-  position:relative;
-}
-.capture-bar #recordToggle::before{
-  content:'';
-  width:26px;
-  height:26px;
-  border-radius:999px;
-  background:#ff3b30;
-  display:block;
-}
-.capture-bar #recordToggle.recording::before{
-  width:24px;
-  height:24px;
-  border-radius:7px;
-}
-.capture-bar .capture-label{
-  position:absolute;
-  bottom:-22px;
-  left:50%;
-  transform:translateX(-50%);
-  font-size:11px;
-  font-weight:600;
-  white-space:nowrap;
-  text-shadow:0 1px 3px rgba(0,0,0,.65);
-}
-.capture-side{
-  position:relative;
-}
-.controls{
-  bottom:max(120px, calc(env(safe-area-inset-bottom) + 110px));
-}
-.top-actions{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-  margin-bottom:10px;
-}
-.perf-badge{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-height:40px;
-}
-.perf-badge.active{
-  background:rgba(72, 255, 131, 0.18);
-  border-color:rgba(72,255,131,.45);
-}
-.metric-row{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
+ min-height:48px;
+ padding:10px 14px;
+ backdrop-filter:blur(10px);
+ background:rgba(0,0,0,.6);
+ border:1px solid rgba(255,255,255,.2);
+ border-radius:12px;
 }
 
 </style>
 </head>
 <body>
 
-<div class="capture-bar" aria-label="Capture controls">
-  <div class="capture-side">
-    <button id="takeSnapshot" aria-label="Take snapshot"></button>
-    <div class="capture-label">SNAP</div>
-  </div>
-  <div class="capture-side">
-    <button id="recordToggle" aria-label="Start recording"></button>
-    <div class="capture-label">REC</div>
-  </div>
+<div class="capture-bar">
+  <button id="takeSnapshot">Snapshot</button>
+  <button id="recordToggle">Record</button>
 </div>
 
 <video id="video" autoplay playsinline muted></video>
@@ -248,25 +170,9 @@ hr{margin:12px 0; border:0; height:1px; background:#444}
 
   <hr>
 
-  <div class="section-title">Performance</div>
-  <div class="metric-row">
-    <label>FPS Cap
-      <input id="fpsCap" type="range" min="12" max="60" step="1" value="30">
-    </label>
-    <label>Resolution Scale
-      <input id="resolutionScale" type="range" min="0.35" max="1" step="0.05" value="0.65">
-    </label>
-  </div>
-  <div class="metric-row">
-    <div class="status" id="perfStats">FPS: --<br>Scale: --</div>
-    <div class="status" id="perfHint">Auto scaling reduces render size on slower phones.</div>
-  </div>
-
-  <hr>
-
   <div class="section-title">B‑Frame</div>
-  <label class="inline-label"><span>B‑Frame Blend</span><input id="bframe" type="checkbox"></label>
-  <label>B‑Frame Intensity <input id="bIntensity" type="range" min="0" max="10" step="0.1" value="0"></label>
+  <label class="inline-label"><span>B‑Frame Blend</span><input id="bframe" type="checkbox" checked></label>
+  <label>B‑Frame Intensity <input id="bIntensity" type="range" min="0" max="10" step="0.1" value="5"></label>
 
   <hr>
 
@@ -276,9 +182,9 @@ hr{margin:12px 0; border:0; height:1px; background:#444}
   <label class="inline-label"><span>Dual‑Axis Sort</span><input id="psDual" type="checkbox"></label>
   <label class="inline-label"><span>Motion‑Reactive Sort</span><input id="psMotion" type="checkbox"></label>
   <label class="inline-label"><span>Destructive Chaos</span><input id="psDestruct" type="checkbox"></label>
-  <label>Sort Threshold <input id="psThreshold" type="range" min="0" max="255" value="0"></label>
-  <label>Motion Sensitivity <input id="psMotionStrength" type="range" min="0" max="100" value="0"></label>
-  <label>Chaos Intensity <input id="psChaos" type="range" min="0" max="100" value="0"></label>
+  <label>Sort Threshold <input id="psThreshold" type="range" min="0" max="255" value="120"></label>
+  <label>Motion Sensitivity <input id="psMotionStrength" type="range" min="0" max="100" value="30"></label>
+  <label>Chaos Intensity <input id="psChaos" type="range" min="0" max="100" value="50"></label>
 
   <hr>
 
@@ -287,8 +193,8 @@ hr{margin:12px 0; border:0; height:1px; background:#444}
     <button id="captureFrame">Capture Overlay</button>
     <button id="clearOverlay">Clear Overlays</button>
   </div>
-  <label>Overlay Opacity <input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="0"></label>
-  <label>Overlay Decay <input id="overlayDecay" type="range" min="0" max="0.05" step="0.001" value="0"></label>
+  <label>Overlay Opacity <input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="0.25"></label>
+  <label>Overlay Decay <input id="overlayDecay" type="range" min="0" max="0.05" step="0.001" value="0.005"></label>
   <label class="inline-label"><span>Warp Overlays</span><input id="overlayWarp" type="checkbox"></label>
   <label class="inline-label"><span>Overlay → Live Feedback</span><input id="overlayFeedback" type="checkbox"></label>
 
@@ -296,13 +202,13 @@ hr{margin:12px 0; border:0; height:1px; background:#444}
 
   <div class="section-title">Advanced</div>
   <label class="inline-label"><span>Recursive Feedback Chain</span><input id="feedbackToggle" type="checkbox"></label>
-  <label>Feedback Depth <input id="feedbackDepth" type="range" min="0" max="10" value="0"></label>
+  <label>Feedback Depth <input id="feedbackDepth" type="range" min="0" max="10" value="3"></label>
 
   <label class="inline-label"><span>Vector Displacement Moshing</span><input id="vectorToggle" type="checkbox"></label>
-  <label>Vector Strength <input id="vectorStrength" type="range" min="0" max="50" value="0"></label>
+  <label>Vector Strength <input id="vectorStrength" type="range" min="0" max="50" value="10"></label>
 
   <label class="inline-label"><span>Motion Overlay Amplification</span><input id="motionAmpToggle" type="checkbox"></label>
-  <label>Amplification <input id="motionAmpStrength" type="range" min="0" max="5" step="0.1" value="0"></label>
+  <label>Amplification <input id="motionAmpStrength" type="range" min="0" max="5" step="0.1" value="1"></label>
 </div>
 
 <script>
@@ -323,11 +229,6 @@ const cameraSelect = document.getElementById('cameraSelect');
 const takeSnapshotBtn = document.getElementById('takeSnapshot');
 const recordToggleBtn = document.getElementById('recordToggle');
 const recordQuality = document.getElementById('recordQuality');
-const performanceModeBtn = document.getElementById('performanceMode');
-const toggleFacingBtn = document.getElementById('toggleFacing');
-const fpsCapSlider = document.getElementById('fpsCap');
-const resolutionScaleSlider = document.getElementById('resolutionScale');
-const perfStats = document.getElementById('perfStats');
 
 const bframeToggle = document.getElementById('bframe');
 const bIntensity = document.getElementById('bIntensity');
@@ -356,7 +257,6 @@ const motionAmpToggle = document.getElementById('motionAmpToggle');
 const motionAmpStrength = document.getElementById('motionAmpStrength');
 
 let w = 0, h = 0;
-let baseVideoWidth = 1280, baseVideoHeight = 720;
 let prevFrame = null, prevPrevFrame = null;
 let overlays = [];
 let feedbackBuffers = [];
@@ -367,23 +267,12 @@ let availableVideoInputs = [];
 let mediaRecorder = null;
 let recordedChunks = [];
 let renderLoopStarted = false;
-let performanceMode = false;
-let isPhone = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || Math.min(window.innerWidth, window.innerHeight) < 900;
-let targetRenderScale = isPhone ? 0.65 : 1;
-let dynamicScale = targetRenderScale;
-let fpsCap = isPhone ? 30 : 60;
-let lastFrameTime = 0;
-let fpsWindowStart = performance.now();
-let fpsFrameCount = 0;
-let measuredFps = 0;
-let frameSkipCounter = 0;
-let useGpuFriendlyPath = true;
 
 function setStatus(message){
   statusBox.innerHTML = message;
 }
 
-function fitCanvasToViewport(videoWidth = 1280, videoHeight = 720, scale = dynamicScale){
+function fitCanvasToViewport(videoWidth = 1280, videoHeight = 720){
   const maxSide = Math.max(window.innerWidth, window.innerHeight);
   const minSide = Math.min(window.innerWidth, window.innerHeight);
   const isPortrait = window.innerHeight >= window.innerWidth;
@@ -404,60 +293,8 @@ function fitCanvasToViewport(videoWidth = 1280, videoHeight = 720, scale = dynam
     drawWidth = Math.round(drawHeight * aspect);
   }
 
-  drawWidth = Math.max(240, Math.round(drawWidth * scale));
-  drawHeight = Math.max(240, Math.round(drawHeight * scale));
-
   w = canvas.width = buffer.width = overlayCanvas.width = drawWidth;
   h = canvas.height = buffer.height = overlayCanvas.height = drawHeight;
-  canvas.style.width = '100vw';
-  canvas.style.height = '100vh';
-}
-
-
-function updatePerfReadout(){
-  perfStats.innerHTML = `FPS: ${measuredFps ? measuredFps.toFixed(1) : '--'} / ${fpsCap}<br>Scale: ${Math.round(dynamicScale * 100)}%`;
-}
-
-function setRenderScale(scale, refit = true){
-  dynamicScale = Math.max(0.35, Math.min(1, scale));
-  resolutionScaleSlider.value = dynamicScale.toFixed(2);
-  if (refit && (video.videoWidth || baseVideoWidth)) {
-    fitCanvasToViewport(video.videoWidth || baseVideoWidth, video.videoHeight || baseVideoHeight, dynamicScale);
-  }
-  updatePerfReadout();
-}
-
-function setFpsCap(value){
-  fpsCap = Math.max(12, Math.min(60, Number(value) || 30));
-  fpsCapSlider.value = String(fpsCap);
-  updatePerfReadout();
-}
-
-function anyHeavyEffectsEnabled(){
-  return (
-    bframeToggle.checked && Number(bIntensity.value) > 0 ||
-    psHorizontal.checked || psVertical.checked || psDual.checked ||
-    (psMotion.checked && Number(psMotionStrength.value) > 0) ||
-    (psDestruct.checked && Number(psChaos.value) > 0) ||
-    (feedbackToggle.checked && Number(feedbackDepthSlider.value) > 0) ||
-    (vectorToggle.checked && Number(vectorStrength.value) > 0) ||
-    (motionAmpToggle.checked && Number(motionAmpStrength.value) > 0) ||
-    overlays.length > 0
-  );
-}
-
-function applyPerformanceMode(enabled){
-  performanceMode = !!enabled;
-  performanceModeBtn.textContent = `Performance Mode: ${performanceMode ? 'On' : 'Off'}`;
-  performanceModeBtn.classList.toggle('active', performanceMode);
-  useGpuFriendlyPath = true;
-  if (performanceMode) {
-    setFpsCap(isPhone ? 24 : 30);
-    setRenderScale(isPhone ? 0.5 : 0.75);
-  } else {
-    setFpsCap(isPhone ? 30 : 60);
-    setRenderScale(isPhone ? 0.65 : 1);
-  }
 }
 
 window.addEventListener('resize', () => {
@@ -536,9 +373,7 @@ async function startCamera(deviceId = currentDeviceId, useFacingFallback = false
     });
 
     await video.play();
-    baseVideoWidth = video.videoWidth || 1280;
-    baseVideoHeight = video.videoHeight || 720;
-    fitCanvasToViewport(baseVideoWidth, baseVideoHeight, dynamicScale);
+    fitCanvasToViewport(video.videoWidth || 1280, video.videoHeight || 720);
 
     const activeTrack = stream.getVideoTracks()[0];
     const settings = activeTrack.getSettings ? activeTrack.getSettings() : {};
@@ -720,54 +555,23 @@ function drawOverlays(curr){
   }
 }
 
-function loop(now = performance.now()){
+function loop(){
   if (!renderLoopStarted) return;
-
-  requestAnimationFrame(loop);
-
-  if (!w || video.readyState < 2) return;
-
-  const minDelta = 1000 / fpsCap;
-  if (now - lastFrameTime < minDelta) return;
-  const delta = now - lastFrameTime || minDelta;
-  lastFrameTime = now;
-
-  fpsFrameCount++;
-  if (now - fpsWindowStart >= 500) {
-    measuredFps = (fpsFrameCount * 1000) / (now - fpsWindowStart);
-    fpsWindowStart = now;
-    fpsFrameCount = 0;
-
-    if (isPhone) {
-      if (measuredFps < fpsCap * 0.72 && dynamicScale > 0.4) {
-        setRenderScale(dynamicScale - 0.05);
-      } else if (measuredFps > Math.min(58, fpsCap * 0.95) && dynamicScale < targetRenderScale) {
-        setRenderScale(dynamicScale + 0.05);
-      }
-    }
-  }
-
-  const heavyEffects = anyHeavyEffectsEnabled();
-  if (performanceMode && heavyEffects) {
-    frameSkipCounter = (frameSkipCounter + 1) % 2;
-    if (frameSkipCounter) return;
+  if (!w || video.readyState < 2) {
+    requestAnimationFrame(loop);
+    return;
   }
 
   let curr = getFrame();
+  curr = blendBFrame(curr);
 
-  if (bframeToggle.checked && Number(bIntensity.value) > 0 && prevPrevFrame) {
-    curr = blendBFrame(curr);
-  }
-
-  if ((psHorizontal.checked || psVertical.checked || psDual.checked) && (Number(psThreshold.value) > 0 || psMotion.checked || psDestruct.checked)) {
+  if (psHorizontal.checked || psVertical.checked || psDual.checked) {
     curr = pixelSort(curr);
   }
 
-  if (vectorToggle.checked && Number(vectorStrength.value) > 0 && prevFrame) {
-    curr = applyVectorDisplacement(curr);
-  }
+  curr = applyVectorDisplacement(curr);
 
-  if (feedbackToggle.checked && Number(feedbackDepthSlider.value) > 0) {
+  if (feedbackToggle.checked) {
     feedbackBuffers.unshift(new ImageData(new Uint8ClampedArray(curr.data), curr.width, curr.height));
     if (feedbackBuffers.length > Number(feedbackDepthSlider.value)) feedbackBuffers.pop();
 
@@ -779,11 +583,9 @@ function loop(now = performance.now()){
         curr.data[i+2] += fb.data[i+2] * alpha;
       }
     });
-  } else if (feedbackBuffers.length) {
-    feedbackBuffers = [];
   }
 
-  if (motionAmpToggle.checked && Number(motionAmpStrength.value) > 0 && prevFrame) {
+  if (motionAmpToggle.checked && prevFrame) {
     const amp = parseFloat(motionAmpStrength.value);
     for (let i = 0; i < curr.data.length; i += 4) {
       const motion = Math.abs(curr.data[i] - prevFrame.data[i]);
@@ -793,15 +595,9 @@ function loop(now = performance.now()){
     }
   }
 
-  if (!heavyEffects && useGpuFriendlyPath) {
-    ctx.clearRect(0, 0, w, h);
-    ctx.drawImage(video, 0, 0, w, h);
-  } else {
-    bctx.putImageData(curr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    ctx.drawImage(buffer, 0, 0);
-  }
-
+  bctx.putImageData(curr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(buffer, 0, 0);
   drawOverlays(curr);
 
   if (prevFrame) {
@@ -809,7 +605,7 @@ function loop(now = performance.now()){
   }
   prevFrame = new ImageData(new Uint8ClampedArray(curr.data), curr.width, curr.height);
 
-  updatePerfReadout();
+  requestAnimationFrame(loop);
 }
 
 function downloadBlob(blob, filename){
@@ -887,12 +683,12 @@ async function startRecording(){
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     await saveBlobToPhone(blob, `glitch-recording-${timestamp}.${ext}`, 'Glitch Recording');
     setStatus(`Recording saved as ${ext.toUpperCase()}.` + (ext !== 'mp4' ? ' This browser does not expose MP4 recording, so it used WebM instead.' : ''));
-    recordToggleBtn.classList.remove('recording');
+    recordToggleBtn.textContent = 'Start Recording';
     mediaRecorder = null;
   };
 
   mediaRecorder.start(250);
-  recordToggleBtn.classList.add('recording');
+  recordToggleBtn.textContent = 'Stop Recording';
   setStatus(`Recording started (${mimeType || 'browser default'}).`);
 }
 
@@ -954,22 +750,6 @@ switchCameraBtn.addEventListener('click', async () => {
   await startCamera('', true);
 });
 
-toggleFacingBtn.addEventListener('click', async () => {
-  preferredFacingMode = preferredFacingMode === 'environment' ? 'user' : 'environment';
-  currentDeviceId = '';
-  await startCamera('', true);
-});
-
-performanceModeBtn.addEventListener('click', () => {
-  applyPerformanceMode(!performanceMode);
-});
-
-fpsCapSlider.addEventListener('input', () => setFpsCap(fpsCapSlider.value));
-resolutionScaleSlider.addEventListener('input', () => {
-  targetRenderScale = Number(resolutionScaleSlider.value);
-  setRenderScale(targetRenderScale);
-});
-
 startCameraBtn.addEventListener('click', async () => {
   await startCamera(currentDeviceId, !currentDeviceId);
 });
@@ -997,9 +777,6 @@ document.addEventListener('visibilitychange', () => {
     setStatus('Camera enumeration is not supported in this browser.');
     return;
   }
-  applyPerformanceMode(isPhone);
-  targetRenderScale = dynamicScale;
-  updatePerfReadout();
   await refreshCameraList();
   setStatus('Ready. Tap <strong>Start Camera</strong> to begin. On phone, use <strong>Hide UI</strong> for fullscreen view.');
 })();
