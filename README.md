@@ -2,351 +2,760 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hybrid Super Glitch Engine – Restored</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Hybrid Super Glitch Engine – Mobile</title>
 <style>
-html,body{margin:0;background:#000;overflow:hidden;font-family:system-ui;color:#fff}
-canvas{width:100vw;height:100vh;display:block}
-
-.controls{
-position:fixed;
-bottom:12px;
-left:12px;
-background:rgba(0,0,0,.85);
-padding:16px;
-border-radius:14px;
-max-height:90vh;
-overflow:auto;
+:root{
+  --panel-bg: rgba(0,0,0,0.82);
+  --panel-border: rgba(255,255,255,0.12);
+  --btn-bg: rgba(255,255,255,0.1);
+  --btn-bg-active: rgba(255,255,255,0.2);
 }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  background:#000;
+  overflow:hidden;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:#fff;
+  touch-action:manipulation;
+}
+body{position:fixed; inset:0; overscroll-behavior:none;}
+canvas{
+  width:100vw;
+  height:100vh;
+  display:block;
+  object-fit:cover;
+  background:#000;
+}
+video{display:none}
+button,input,select{font:inherit}
+button,select{
+  min-height:40px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.16);
+  background:var(--btn-bg);
+  color:#fff;
+}
+button{padding:8px 10px; cursor:pointer}
+button:active{transform:scale(0.98); background:var(--btn-bg-active)}
+select{padding:8px 10px; width:100%}
+input[type="range"]{width:100%}
+label,.control-row,.status{display:block; font-size:12px; margin-bottom:10px}
+hr{margin:12px 0; border:0; height:1px; background:#444}
 
-.controls label,.controls button{display:block;font-size:12px;margin-bottom:8px}
-button{cursor:pointer;padding:4px 8px}
-hr{margin:10px 0;border:0;height:1px;background:#444}
-
-#uiToggle{position:fixed;top:20px;right:20px;z-index:999}
-#switchCam{position:fixed;top:20px;left:160px;z-index:999}
-#cameraSelect{position:fixed;top:70px;left:20px;z-index:999}
+.controls-toggle{
+  position:fixed;
+  top:max(12px, env(safe-area-inset-top));
+  right:max(12px, env(safe-area-inset-right));
+  z-index:30;
+  min-width:52px;
+  min-height:52px;
+  border-radius:999px;
+  backdrop-filter:blur(10px);
+}
+.controls{
+  position:fixed;
+  left:max(10px, env(safe-area-inset-left));
+  right:max(10px, env(safe-area-inset-right));
+  bottom:max(10px, env(safe-area-inset-bottom));
+  z-index:20;
+  background:var(--panel-bg);
+  border:1px solid var(--panel-border);
+  border-radius:16px;
+  padding:14px;
+  max-height:min(72vh, 720px);
+  overflow:auto;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  transition:transform .2s ease, opacity .2s ease;
+}
+.controls.hidden{
+  transform:translateY(calc(100% + 20px));
+  opacity:0;
+  pointer-events:none;
+}
+.control-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:10px;
+}
+.controls .section-title{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  opacity:.75;
+  margin-bottom:8px;
+}
+.inline-label{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.inline-label input[type="checkbox"]{transform:scale(1.2)}
+.status{
+  padding:8px 10px;
+  border-radius:10px;
+  background:rgba(255,255,255,0.06);
+  line-height:1.35;
+}
+@media (min-width: 900px){
+  .controls{
+    left:12px;
+    right:auto;
+    width:min(380px, 42vw);
+    max-height:90vh;
+  }
+}
 </style>
 </head>
-
 <body>
-
-<button id="startCam" style="position:fixed;top:20px;left:20px;z-index:999">Start Camera</button>
-<button id="switchCam">Switch Camera</button>
-<select id="cameraSelect"></select>
-<button id="uiToggle">Toggle UI</button>
-
-<video id="video" autoplay playsinline muted style="display:none"></video>
+<video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 
+<button id="toggleControls" class="controls-toggle" aria-label="Toggle controls">Hide UI</button>
+
 <div class="controls" id="controlsPanel">
+  <div class="section-title">Capture</div>
+  <div class="control-grid">
+    <button id="startCamera">Start Camera</button>
+    <button id="switchCamera">Switch Camera</button>
+    <button id="takeSnapshot">Save Snapshot</button>
+    <button id="recordToggle">Start Recording</button>
+  </div>
 
-<label><input id="bframe" type="checkbox" checked>B-Frame Blend</label>
-<label>B-Frame Intensity <input id="bIntensity" type="range" min="0" max="10" step="0.1" value="5"></label>
+  <label>Camera
+    <select id="cameraSelect">
+      <option value="">Loading cameras…</option>
+    </select>
+  </label>
 
-<hr>
+  <label>Recording Quality
+    <select id="recordQuality">
+      <option value="2500000">Standard</option>
+      <option value="5000000" selected>High</option>
+      <option value="8000000">Very High</option>
+    </select>
+  </label>
 
-<label><input id="psHorizontal" type="checkbox">Pixel Sort Horizontal</label>
-<label><input id="psVertical" type="checkbox">Pixel Sort Vertical</label>
-<label><input id="psDual" type="checkbox">Dual-Axis Sort</label>
-<label><input id="psMotion" type="checkbox">Motion-Reactive Sort</label>
-<label><input id="psDestruct" type="checkbox">Destructive Chaos</label>
+  <div class="status" id="statusBox">Ready. Tap <strong>Start Camera</strong> to begin.</div>
 
-<label>Sort Threshold <input id="psThreshold" type="range" min="0" max="255" value="120"></label>
-<label>Motion Sensitivity <input id="psMotionStrength" type="range" min="0" max="100" value="30"></label>
-<label>Chaos Intensity <input id="psChaos" type="range" min="0" max="100" value="50"></label>
+  <hr>
 
-<hr>
+  <div class="section-title">B‑Frame</div>
+  <label class="inline-label"><span>B‑Frame Blend</span><input id="bframe" type="checkbox" checked></label>
+  <label>B‑Frame Intensity <input id="bIntensity" type="range" min="0" max="10" step="0.1" value="5"></label>
 
-<button id="captureFrame">Capture Overlay</button>
-<button id="clearOverlay">Clear Overlays</button>
+  <hr>
 
-<label>Overlay Opacity <input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="0.25"></label>
-<label>Overlay Decay <input id="overlayDecay" type="range" min="0" max="0.05" step="0.001" value="0.005"></label>
+  <div class="section-title">Pixel Sorting</div>
+  <label class="inline-label"><span>Pixel Sort Horizontal</span><input id="psHorizontal" type="checkbox"></label>
+  <label class="inline-label"><span>Pixel Sort Vertical</span><input id="psVertical" type="checkbox"></label>
+  <label class="inline-label"><span>Dual‑Axis Sort</span><input id="psDual" type="checkbox"></label>
+  <label class="inline-label"><span>Motion‑Reactive Sort</span><input id="psMotion" type="checkbox"></label>
+  <label class="inline-label"><span>Destructive Chaos</span><input id="psDestruct" type="checkbox"></label>
+  <label>Sort Threshold <input id="psThreshold" type="range" min="0" max="255" value="120"></label>
+  <label>Motion Sensitivity <input id="psMotionStrength" type="range" min="0" max="100" value="30"></label>
+  <label>Chaos Intensity <input id="psChaos" type="range" min="0" max="100" value="50"></label>
 
-<label><input id="overlayWarp" type="checkbox">Warp Overlays</label>
-<label><input id="overlayFeedback" type="checkbox">Overlay → Live Feedback</label>
+  <hr>
 
+  <div class="section-title">Overlays</div>
+  <div class="control-grid">
+    <button id="captureFrame">Capture Overlay</button>
+    <button id="clearOverlay">Clear Overlays</button>
+  </div>
+  <label>Overlay Opacity <input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="0.25"></label>
+  <label>Overlay Decay <input id="overlayDecay" type="range" min="0" max="0.05" step="0.001" value="0.005"></label>
+  <label class="inline-label"><span>Warp Overlays</span><input id="overlayWarp" type="checkbox"></label>
+  <label class="inline-label"><span>Overlay → Live Feedback</span><input id="overlayFeedback" type="checkbox"></label>
+
+  <hr>
+
+  <div class="section-title">Advanced</div>
+  <label class="inline-label"><span>Recursive Feedback Chain</span><input id="feedbackToggle" type="checkbox"></label>
+  <label>Feedback Depth <input id="feedbackDepth" type="range" min="0" max="10" value="3"></label>
+
+  <label class="inline-label"><span>Vector Displacement Moshing</span><input id="vectorToggle" type="checkbox"></label>
+  <label>Vector Strength <input id="vectorStrength" type="range" min="0" max="50" value="10"></label>
+
+  <label class="inline-label"><span>Motion Overlay Amplification</span><input id="motionAmpToggle" type="checkbox"></label>
+  <label>Amplification <input id="motionAmpStrength" type="range" min="0" max="5" step="0.1" value="1"></label>
 </div>
 
 <script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: true });
+const buffer = document.createElement('canvas');
+const bctx = buffer.getContext('2d', { willReadFrequently: true });
+const overlayCanvas = document.createElement('canvas');
+const overlayCtx = overlayCanvas.getContext('2d', { willReadFrequently: true });
 
-/* UI toggle */
+const controlsPanel = document.getElementById('controlsPanel');
+const toggleControlsBtn = document.getElementById('toggleControls');
+const statusBox = document.getElementById('statusBox');
+const startCameraBtn = document.getElementById('startCamera');
+const switchCameraBtn = document.getElementById('switchCamera');
+const cameraSelect = document.getElementById('cameraSelect');
+const takeSnapshotBtn = document.getElementById('takeSnapshot');
+const recordToggleBtn = document.getElementById('recordToggle');
+const recordQuality = document.getElementById('recordQuality');
 
-const controlsPanel=document.getElementById("controlsPanel")
-document.getElementById("uiToggle").onclick=()=>{
-controlsPanel.style.display=
-controlsPanel.style.display==="none"?"block":"none"
+const bframeToggle = document.getElementById('bframe');
+const bIntensity = document.getElementById('bIntensity');
+
+const psHorizontal = document.getElementById('psHorizontal');
+const psVertical = document.getElementById('psVertical');
+const psDual = document.getElementById('psDual');
+const psMotion = document.getElementById('psMotion');
+const psDestruct = document.getElementById('psDestruct');
+const psThreshold = document.getElementById('psThreshold');
+const psMotionStrength = document.getElementById('psMotionStrength');
+const psChaos = document.getElementById('psChaos');
+
+const captureBtn = document.getElementById('captureFrame');
+const clearBtn = document.getElementById('clearOverlay');
+const overlayOpacitySlider = document.getElementById('overlayOpacity');
+const overlayDecaySlider = document.getElementById('overlayDecay');
+const overlayWarp = document.getElementById('overlayWarp');
+const overlayFeedback = document.getElementById('overlayFeedback');
+
+const feedbackToggle = document.getElementById('feedbackToggle');
+const feedbackDepthSlider = document.getElementById('feedbackDepth');
+const vectorToggle = document.getElementById('vectorToggle');
+const vectorStrength = document.getElementById('vectorStrength');
+const motionAmpToggle = document.getElementById('motionAmpToggle');
+const motionAmpStrength = document.getElementById('motionAmpStrength');
+
+let w = 0, h = 0;
+let prevFrame = null, prevPrevFrame = null;
+let overlays = [];
+let feedbackBuffers = [];
+let stream = null;
+let currentDeviceId = '';
+let preferredFacingMode = 'environment';
+let availableVideoInputs = [];
+let mediaRecorder = null;
+let recordedChunks = [];
+let renderLoopStarted = false;
+
+function setStatus(message){
+  statusBox.innerHTML = message;
 }
 
-/* camera system */
+function fitCanvasToViewport(videoWidth = 1280, videoHeight = 720){
+  const maxSide = Math.max(window.innerWidth, window.innerHeight);
+  const minSide = Math.min(window.innerWidth, window.innerHeight);
+  const isPortrait = window.innerHeight >= window.innerWidth;
 
-const video=document.getElementById("video")
-const startBtn=document.getElementById("startCam")
-const switchBtn=document.getElementById("switchCam")
-const cameraSelect=document.getElementById("cameraSelect")
+  let targetWidth = videoWidth;
+  let targetHeight = videoHeight;
 
-let currentStream=null
-let cameras=[]
-let currentIndex=0
+  if (isPortrait && videoWidth > videoHeight) {
+    targetWidth = videoHeight;
+    targetHeight = videoWidth;
+  }
 
-function stopStream(){
-if(currentStream)currentStream.getTracks().forEach(t=>t.stop())
+  const aspect = targetWidth / targetHeight;
+  let drawWidth = maxSide;
+  let drawHeight = Math.round(drawWidth / aspect);
+  if (drawHeight < minSide) {
+    drawHeight = minSide;
+    drawWidth = Math.round(drawHeight * aspect);
+  }
+
+  w = canvas.width = buffer.width = overlayCanvas.width = drawWidth;
+  h = canvas.height = buffer.height = overlayCanvas.height = drawHeight;
 }
 
-async function startCamera(index){
+window.addEventListener('resize', () => {
+  if (video.videoWidth && video.videoHeight) fitCanvasToViewport(video.videoWidth, video.videoHeight);
+});
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => {
+    if (video.videoWidth && video.videoHeight) fitCanvasToViewport(video.videoWidth, video.videoHeight);
+  }, 200);
+});
 
-stopStream()
-
-let constraints
-
-if(cameras[index]){
-constraints={video:{deviceId:{exact:cameras[index].deviceId}}}
-}else{
-constraints={video:true}
+function stopCurrentStream(){
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
+  video.srcObject = null;
 }
 
-const stream=await navigator.mediaDevices.getUserMedia(constraints)
+async function refreshCameraList(selectedId = ''){
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    availableVideoInputs = devices.filter(device => device.kind === 'videoinput');
 
-currentStream=stream
-video.srcObject=stream
+    if (!availableVideoInputs.length) {
+      cameraSelect.innerHTML = '<option value="">No cameras found</option>';
+      return;
+    }
 
+    cameraSelect.innerHTML = '';
+    availableVideoInputs.forEach((device, index) => {
+      const option = document.createElement('option');
+      option.value = device.deviceId;
+      option.textContent = device.label || `Camera ${index + 1}`;
+      cameraSelect.appendChild(option);
+    });
+
+    const matched = availableVideoInputs.find(d => d.deviceId === selectedId) || availableVideoInputs[0];
+    if (matched) {
+      cameraSelect.value = matched.deviceId;
+      currentDeviceId = matched.deviceId;
+    }
+  } catch (error) {
+    console.error(error);
+    setStatus(`Unable to list cameras: ${error.message}`);
+  }
 }
 
-async function getCameras(){
+async function startCamera(deviceId = currentDeviceId, useFacingFallback = false){
+  if (!navigator.mediaDevices?.getUserMedia) {
+    setStatus('This browser does not support camera access.');
+    return;
+  }
 
-const devices=await navigator.mediaDevices.enumerateDevices()
-cameras=devices.filter(d=>d.kind==="videoinput")
+  try {
+    stopCurrentStream();
 
-cameraSelect.innerHTML=""
+    const constraints = {
+      audio: false,
+      video: useFacingFallback || !deviceId ? {
+        facingMode: { ideal: preferredFacingMode },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      } : {
+        deviceId: { exact: deviceId },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    };
 
-cameras.forEach((cam,i)=>{
-const option=document.createElement("option")
-option.value=i
-option.text=cam.label||"Camera "+(i+1)
-cameraSelect.appendChild(option)
-})
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = stream;
 
-}
+    await new Promise(resolve => {
+      video.onloadedmetadata = () => resolve();
+    });
 
-startBtn.onclick=async()=>{
+    await video.play();
+    fitCanvasToViewport(video.videoWidth || 1280, video.videoHeight || 720);
 
-const temp=await navigator.mediaDevices.getUserMedia({video:true})
-temp.getTracks().forEach(t=>t.stop())
+    const activeTrack = stream.getVideoTracks()[0];
+    const settings = activeTrack.getSettings ? activeTrack.getSettings() : {};
+    currentDeviceId = settings.deviceId || deviceId || currentDeviceId;
 
-await getCameras()
-await startCamera(0)
+    await refreshCameraList(currentDeviceId);
 
-startBtn.remove()
+    const cameraName = activeTrack.label || cameraSelect.selectedOptions[0]?.textContent || 'Camera';
+    setStatus(`${cameraName} active. Render size ${w}×${h}.`);
 
-}
-
-switchBtn.onclick=async()=>{
-
-currentIndex++
-if(currentIndex>=cameras.length)currentIndex=0
-
-cameraSelect.value=currentIndex
-await startCamera(currentIndex)
-
-}
-
-cameraSelect.onchange=async()=>{
-currentIndex=parseInt(cameraSelect.value)
-await startCamera(currentIndex)
-}
-
-/* canvas + glitch engine */
-
-const canvas=document.getElementById("canvas")
-const ctx=canvas.getContext("2d")
-
-const buffer=document.createElement("canvas")
-const bctx=buffer.getContext("2d")
-
-let w=0,h=0
-let prevFrame=null
-let prevPrevFrame=null
-let overlays=[]
-
-video.onloadedmetadata=()=>{
-video.play()
-w=canvas.width=buffer.width=video.videoWidth
-h=canvas.height=buffer.height=video.videoHeight
+    if (!renderLoopStarted) {
+      renderLoopStarted = true;
+      loop();
+    }
+  } catch (error) {
+    console.error(error);
+    if (!useFacingFallback && deviceId) {
+      return startCamera('', true);
+    }
+    setStatus(`Camera error: ${error.message}`);
+  }
 }
 
 function getFrame(){
-bctx.drawImage(video,0,0,w,h)
-return bctx.getImageData(0,0,w,h)
+  bctx.drawImage(video, 0, 0, w, h);
+  return bctx.getImageData(0, 0, w, h);
 }
-
-/* B-frame */
 
 function blendBFrame(curr){
-
-if(prevPrevFrame && document.getElementById("bframe").checked){
-
-const alpha=document.getElementById("bIntensity").value/10
-const out=new Uint8ClampedArray(curr.data.length)
-
-for(let i=0;i<curr.data.length;i+=4){
-
-out[i]=prevPrevFrame.data[i]*alpha+curr.data[i]*(1-alpha)
-out[i+1]=prevPrevFrame.data[i+1]*alpha+curr.data[i+1]*(1-alpha)
-out[i+2]=prevPrevFrame.data[i+2]*alpha+curr.data[i+2]*(1-alpha)
-out[i+3]=255
-
+  if (prevPrevFrame && bframeToggle.checked) {
+    const alpha = parseFloat(bIntensity.value) / 10;
+    const blended = new Uint8ClampedArray(curr.data.length);
+    for (let i = 0; i < curr.data.length; i += 4) {
+      blended[i] = prevPrevFrame.data[i] * alpha + curr.data[i] * (1 - alpha);
+      blended[i + 1] = prevPrevFrame.data[i + 1] * alpha + curr.data[i + 1] * (1 - alpha);
+      blended[i + 2] = prevPrevFrame.data[i + 2] * alpha + curr.data[i + 2] * (1 - alpha);
+      blended[i + 3] = 255;
+    }
+    return new ImageData(blended, w, h);
+  }
+  return curr;
 }
-
-return new ImageData(out,w,h)
-
-}
-
-return curr
-}
-
-/* pixel sorting */
 
 function pixelSort(imageData){
+  const threshold = parseInt(psThreshold.value, 10);
+  const chaos = parseInt(psChaos.value, 10) / 100;
+  const motionStrength = parseInt(psMotionStrength.value, 10) / 100;
+  const { data, width, height } = imageData;
+  const output = new Uint8ClampedArray(data);
 
-const threshold=parseInt(psThreshold.value)
-const chaos=parseInt(psChaos.value)/100
-const motionStrength=parseInt(psMotionStrength.value)/100
+  function brightness(i){ return (data[i] + data[i+1] + data[i+2]) / 3; }
 
-const {data,width,height}=imageData
-const output=new Uint8ClampedArray(data)
+  function sortSegment(indices){
+    const segment = indices.map(i => ({
+      r: data[i],
+      g: data[i+1],
+      b: data[i+2],
+      a: data[i+3],
+      bright: brightness(i)
+    }));
 
-function brightness(i){return(data[i]+data[i+1]+data[i+2])/3}
+    segment.sort((a,b) => a.bright - b.bright);
 
-function sortSegment(indices){
+    if (psDestruct.checked && segment.length > 1) {
+      for (let i = segment.length - 1; i > 0; i--) {
+        const j = Math.max(0, Math.min(segment.length - 1, Math.floor(Math.random() * segment.length * chaos)));
+        [segment[i], segment[j]] = [segment[j], segment[i]];
+      }
+    }
 
-const seg=indices.map(i=>({
-r:data[i],
-g:data[i+1],
-b:data[i+2],
-a:data[i+3],
-bright:brightness(i)
-}))
+    indices.forEach((idx, i) => {
+      output[idx] = segment[i].r;
+      output[idx+1] = segment[i].g;
+      output[idx+2] = segment[i].b;
+      output[idx+3] = segment[i].a;
+    });
+  }
 
-seg.sort((a,b)=>a.bright-b.bright)
+  const horizontal = psHorizontal.checked || psDual.checked;
+  const vertical = psVertical.checked || psDual.checked;
 
-if(psDestruct.checked){
+  if (horizontal) {
+    for (let y = 0; y < height; y++) {
+      let indices = [];
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+        let b = brightness(i);
+        if (psMotion.checked && prevFrame) {
+          const diff = Math.abs(data[i] - prevFrame.data[i]);
+          b += diff * motionStrength;
+        }
+        if (b > threshold) indices.push(i);
+        else if (indices.length) { sortSegment(indices); indices = []; }
+      }
+      if (indices.length) sortSegment(indices);
+    }
+  }
 
-for(let i=seg.length-1;i>0;i--){
-const j=Math.floor(Math.random()*seg.length*chaos)
-;[seg[i],seg[j]]=[seg[j],seg[i]]
+  if (vertical) {
+    for (let x = 0; x < width; x++) {
+      let indices = [];
+      for (let y = 0; y < height; y++) {
+        const i = (y * width + x) * 4;
+        let b = brightness(i);
+        if (psMotion.checked && prevFrame) {
+          const diff = Math.abs(data[i] - prevFrame.data[i]);
+          b += diff * motionStrength;
+        }
+        if (b > threshold) indices.push(i);
+        else if (indices.length) { sortSegment(indices); indices = []; }
+      }
+      if (indices.length) sortSegment(indices);
+    }
+  }
+
+  return new ImageData(output, width, height);
 }
 
+function warpImageData(imageData){
+  const { data, width, height } = imageData;
+  const output = new Uint8ClampedArray(data);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const shift = Math.floor(Math.sin((x + y) * 0.05) * 20);
+      const srcX = (x + shift + width) % width;
+      const srcI = (y * width + srcX) * 4;
+      output[i] = data[srcI];
+      output[i+1] = data[srcI+1];
+      output[i+2] = data[srcI+2];
+      output[i+3] = 255;
+    }
+  }
+  return new ImageData(output, width, height);
 }
 
-indices.forEach((idx,i)=>{
-output[idx]=seg[i].r
-output[idx+1]=seg[i].g
-output[idx+2]=seg[i].b
-output[idx+3]=seg[i].a
-})
+function applyVectorDisplacement(curr){
+  if (!vectorToggle.checked || !prevFrame) return curr;
+  const strength = parseInt(vectorStrength.value, 10);
+  const { data, width, height } = curr;
+  const output = new Uint8ClampedArray(data);
 
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const i = (y * width + x) * 4;
+      const diff = Math.abs(data[i] - prevFrame.data[i]);
+      const dx = Math.floor((diff / 255) * strength);
+      const srcX = Math.min(width - 1, Math.max(0, x + dx));
+      const srcI = (y * width + srcX) * 4;
+      output[i] = data[srcI];
+      output[i+1] = data[srcI+1];
+      output[i+2] = data[srcI+2];
+      output[i+3] = 255;
+    }
+  }
+
+  return new ImageData(output, width, height);
 }
 
-const horizontal=psHorizontal.checked||psDual.checked
-const vertical=psVertical.checked||psDual.checked
+function drawOverlays(curr){
+  overlays.forEach(o => {
+    if (overlayWarp.checked) o.image = warpImageData(o.image);
+    overlayCtx.putImageData(o.image, 0, 0);
+    ctx.globalAlpha = o.opacity;
+    ctx.drawImage(overlayCanvas, 0, 0);
+    ctx.globalAlpha = 1;
+    o.opacity -= parseFloat(overlayDecaySlider.value);
+  });
+  overlays = overlays.filter(o => o.opacity > 0);
 
-if(horizontal){
-
-for(let y=0;y<height;y++){
-
-let indices=[]
-
-for(let x=0;x<width;x++){
-
-const i=(y*width+x)*4
-
-let b=brightness(i)
-
-if(psMotion.checked && prevFrame){
-
-const diff=Math.abs(data[i]-prevFrame.data[i])
-b+=diff*motionStrength
-
+  if (overlayFeedback.checked) {
+    overlays.forEach(o => {
+      for (let i = 0; i < curr.data.length; i += 4) {
+        curr.data[i] += o.image.data[i] * 0.5;
+        curr.data[i+1] += o.image.data[i+1] * 0.5;
+        curr.data[i+2] += o.image.data[i+2] * 0.5;
+      }
+    });
+  }
 }
-
-if(b>threshold)indices.push(i)
-else{
-if(indices.length){sortSegment(indices);indices=[]}
-}
-
-}
-
-if(indices.length)sortSegment(indices)
-
-}
-
-}
-
-if(vertical){
-
-for(let x=0;x<width;x++){
-
-let indices=[]
-
-for(let y=0;y<height;y++){
-
-const i=(y*width+x)*4
-
-let b=brightness(i)
-
-if(psMotion.checked && prevFrame){
-
-const diff=Math.abs(data[i]-prevFrame.data[i])
-b+=diff*motionStrength
-
-}
-
-if(b>threshold)indices.push(i)
-else{
-if(indices.length){sortSegment(indices);indices=[]}
-}
-
-}
-
-if(indices.length)sortSegment(indices)
-
-}
-
-}
-
-return new ImageData(output,width,height)
-
-}
-
-/* main loop */
 
 function loop(){
+  if (!renderLoopStarted) return;
+  if (!w || video.readyState < 2) {
+    requestAnimationFrame(loop);
+    return;
+  }
 
-if(!w||video.readyState<2){
-requestAnimationFrame(loop)
-return
+  let curr = getFrame();
+  curr = blendBFrame(curr);
+
+  if (psHorizontal.checked || psVertical.checked || psDual.checked) {
+    curr = pixelSort(curr);
+  }
+
+  curr = applyVectorDisplacement(curr);
+
+  if (feedbackToggle.checked) {
+    feedbackBuffers.unshift(new ImageData(new Uint8ClampedArray(curr.data), curr.width, curr.height));
+    if (feedbackBuffers.length > Number(feedbackDepthSlider.value)) feedbackBuffers.pop();
+
+    feedbackBuffers.forEach((fb, idx) => {
+      const alpha = 1 / (idx + 2);
+      for (let i = 0; i < curr.data.length; i += 4) {
+        curr.data[i] += fb.data[i] * alpha;
+        curr.data[i+1] += fb.data[i+1] * alpha;
+        curr.data[i+2] += fb.data[i+2] * alpha;
+      }
+    });
+  }
+
+  if (motionAmpToggle.checked && prevFrame) {
+    const amp = parseFloat(motionAmpStrength.value);
+    for (let i = 0; i < curr.data.length; i += 4) {
+      const motion = Math.abs(curr.data[i] - prevFrame.data[i]);
+      curr.data[i] += motion * amp;
+      curr.data[i+1] += motion * amp;
+      curr.data[i+2] += motion * amp;
+    }
+  }
+
+  bctx.putImageData(curr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(buffer, 0, 0);
+  drawOverlays(curr);
+
+  if (prevFrame) {
+    prevPrevFrame = new ImageData(new Uint8ClampedArray(prevFrame.data), prevFrame.width, prevFrame.height);
+  }
+  prevFrame = new ImageData(new Uint8ClampedArray(curr.data), curr.width, curr.height);
+
+  requestAnimationFrame(loop);
 }
 
-let curr=getFrame()
-
-curr=blendBFrame(curr)
-
-if(psHorizontal.checked||psVertical.checked||psDual.checked)
-curr=pixelSort(curr)
-
-bctx.putImageData(curr,0,0)
-
-ctx.clearRect(0,0,w,h)
-ctx.drawImage(buffer,0,0)
-
-requestAnimationFrame(loop)
-
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
-loop()
+async function saveBlobToPhone(blob, filename, shareTitle){
+  const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: shareTitle || filename });
+      return true;
+    } catch (error) {
+      if (error.name !== 'AbortError') console.warn('Share failed, falling back to download.', error);
+    }
+  }
+  downloadBlob(blob, filename);
+  return false;
+}
 
+function getBestRecorderMimeType(){
+  const candidates = [
+    'video/mp4;codecs=h264,aac',
+    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm'
+  ];
+  if (!window.MediaRecorder) return '';
+  return candidates.find(type => MediaRecorder.isTypeSupported(type)) || '';
+}
+
+async function startRecording(){
+  if (!w || !h) {
+    setStatus('Start the camera before recording.');
+    return;
+  }
+  if (!window.MediaRecorder) {
+    setStatus('MediaRecorder is not supported on this browser.');
+    return;
+  }
+
+  recordedChunks = [];
+  const fps = 30;
+  const mimeType = getBestRecorderMimeType();
+  const bitRate = Number(recordQuality.value);
+  const captureStream = canvas.captureStream(fps);
+
+  try {
+    mediaRecorder = new MediaRecorder(captureStream, mimeType ? {
+      mimeType,
+      videoBitsPerSecond: bitRate
+    } : { videoBitsPerSecond: bitRate });
+  } catch (error) {
+    console.error(error);
+    setStatus(`Could not start recorder: ${error.message}`);
+    return;
+  }
+
+  mediaRecorder.ondataavailable = event => {
+    if (event.data && event.data.size > 0) recordedChunks.push(event.data);
+  };
+
+  mediaRecorder.onstop = async () => {
+    const ext = mediaRecorder.mimeType && mediaRecorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
+    const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || `video/${ext}` });
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    await saveBlobToPhone(blob, `glitch-recording-${timestamp}.${ext}`, 'Glitch Recording');
+    setStatus(`Recording saved as ${ext.toUpperCase()}.` + (ext !== 'mp4' ? ' This browser does not expose MP4 recording, so it used WebM instead.' : ''));
+    recordToggleBtn.textContent = 'Start Recording';
+    mediaRecorder = null;
+  };
+
+  mediaRecorder.start(250);
+  recordToggleBtn.textContent = 'Stop Recording';
+  setStatus(`Recording started (${mimeType || 'browser default'}).`);
+}
+
+function stopRecording(){
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+    setStatus('Finishing recording…');
+  }
+}
+
+captureBtn.onclick = () => {
+  if (!w) return;
+  bctx.drawImage(video, 0, 0, w, h);
+  overlays.push({
+    image: bctx.getImageData(0, 0, w, h),
+    opacity: parseFloat(overlayOpacitySlider.value)
+  });
+};
+
+clearBtn.onclick = () => { overlays = []; };
+
+takeSnapshotBtn.onclick = async () => {
+  if (!w || !h) {
+    setStatus('Start the camera before taking a snapshot.');
+    return;
+  }
+  canvas.toBlob(async blob => {
+    if (!blob) {
+      setStatus('Snapshot failed.');
+      return;
+    }
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    await saveBlobToPhone(blob, `glitch-snapshot-${timestamp}.png`, 'Glitch Snapshot');
+    setStatus('Snapshot saved.');
+  }, 'image/png');
+};
+
+cameraSelect.addEventListener('change', async (event) => {
+  currentDeviceId = event.target.value;
+  await startCamera(currentDeviceId, false);
+});
+
+switchCameraBtn.addEventListener('click', async () => {
+  if (!availableVideoInputs.length) {
+    await refreshCameraList(currentDeviceId);
+  }
+  if (availableVideoInputs.length > 1) {
+    const currentIndex = availableVideoInputs.findIndex(device => device.deviceId === currentDeviceId || device.deviceId === cameraSelect.value);
+    const nextDevice = availableVideoInputs[(currentIndex + 1 + availableVideoInputs.length) % availableVideoInputs.length];
+    if (nextDevice) {
+      currentDeviceId = nextDevice.deviceId;
+      cameraSelect.value = currentDeviceId;
+      await startCamera(currentDeviceId, false);
+      return;
+    }
+  }
+
+  preferredFacingMode = preferredFacingMode === 'environment' ? 'user' : 'environment';
+  await startCamera('', true);
+});
+
+startCameraBtn.addEventListener('click', async () => {
+  await startCamera(currentDeviceId, !currentDeviceId);
+});
+
+recordToggleBtn.addEventListener('click', async () => {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') stopRecording();
+  else await startRecording();
+});
+
+toggleControlsBtn.addEventListener('click', () => {
+  const hidden = controlsPanel.classList.toggle('hidden');
+  toggleControlsBtn.textContent = hidden ? 'Show UI' : 'Hide UI';
+});
+
+navigator.mediaDevices?.addEventListener?.('devicechange', () => refreshCameraList(currentDeviceId));
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && mediaRecorder && mediaRecorder.state !== 'inactive') {
+    stopRecording();
+  }
+});
+
+(async function init(){
+  if (!navigator.mediaDevices?.enumerateDevices) {
+    setStatus('Camera enumeration is not supported in this browser.');
+    return;
+  }
+  await refreshCameraList();
+  setStatus('Ready. Tap <strong>Start Camera</strong> to begin. On phone, use <strong>Hide UI</strong> for fullscreen view.');
+})();
 </script>
 </body>
 </html>
