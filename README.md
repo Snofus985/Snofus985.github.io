@@ -111,9 +111,34 @@ hr{margin:12px 0; border:0; height:1px; background:#444}
     max-height:90vh;
   }
 }
+
+
+.capture-bar{
+ position:fixed;
+ left:max(12px, env(safe-area-inset-left));
+ top:max(12px, env(safe-area-inset-top));
+ z-index:40;
+ display:flex;
+ gap:8px;
+}
+.capture-bar button{
+ min-height:48px;
+ padding:10px 14px;
+ backdrop-filter:blur(10px);
+ background:rgba(0,0,0,.6);
+ border:1px solid rgba(255,255,255,.2);
+ border-radius:12px;
+}
+
 </style>
 </head>
 <body>
+
+<div class="capture-bar">
+  <button id="takeSnapshot">Snapshot</button>
+  <button id="recordToggle">Record</button>
+</div>
+
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 
@@ -124,8 +149,7 @@ hr{margin:12px 0; border:0; height:1px; background:#444}
   <div class="control-grid">
     <button id="startCamera">Start Camera</button>
     <button id="switchCamera">Switch Camera</button>
-    <button id="takeSnapshot">Save Snapshot</button>
-    <button id="recordToggle">Start Recording</button>
+    
   </div>
 
   <label>Camera
